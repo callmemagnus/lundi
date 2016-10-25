@@ -1,6 +1,7 @@
 const chalk = require('chalk');
 const figlet = require('figlet');
 
+/* eslint-disable no-console */
 module.exports = {
   title: (text) => {
     console.log(
@@ -20,3 +21,4 @@ module.exports = {
     console.log.apply(console, arguments);
   }
 };
+/* eslint-enable no-console */
