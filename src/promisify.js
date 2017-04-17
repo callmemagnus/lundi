@@ -1,8 +1,11 @@
-const debug = require('debug')('promisify');
 
-module.exports = (fun, cont) => {
+/**
+ * 
+ * @param {Function} fun 
+ * @param {} cont 
+ */
+const promisify = (fun, cont) => {
   if (typeof fun !== 'function') {
-    debug('not a function');
     throw 'promisify requires a function as paramater';
   }
 
@@ -20,3 +23,5 @@ module.exports = (fun, cont) => {
     });
   };
 };
+
+export default promisify;

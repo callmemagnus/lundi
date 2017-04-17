@@ -7,9 +7,11 @@ const git = require('./git');
 // all the code related to the generation of the config files
 const configFilename = require('../package').config.filename;
 
-const hasDotGit = directory => {
-  return files.directoryExists(path.join(directory, '.git'));
-};
+/**
+ * Determin if directory has a .git repository
+ * @param {String} directory
+ */
+const hasDotGit = directory => files.directoryExists(path.join(directory, '.git'));
 
 const findCommandForproject = directory => {
   if (files.fileExists(path.join(directory, 'package.json'))) {
@@ -37,7 +39,7 @@ const findCommandForproject = directory => {
 
 const buildConfigForRepoIn = directory => {
   debug('buildConfigForRepoIn %s', directory);
-  return git.getRemotes(path.join(files.currentDirectory(), directory))
+  return git.getRemotes(directory)
     .then(data => {
       debug('configuration for %s (%d remotes)', directory, data.length);
 
@@ -62,8 +64,8 @@ const buildConfigForRepoIn = directory => {
       }
 
       return config;
-    })
-    .catch(error => {
+    },
+    error => {
       debug('error %s', error);
       return null;
     });
@@ -105,7 +107,7 @@ const buildConfigForRepoIn = directory => {
 
 };
 
-module.exports = function(currentDirectory) {
+const configurationBuilder = currentDirectory => {
   presentation.log(`Trying to build config for ${currentDirectory}`);
 
   if (files.fileExists(configFilename)) {
@@ -113,20 +115,15 @@ module.exports = function(currentDirectory) {
     process.exit(1);
   }
 
-  return new Promise((resolve, reject) => {
-    const configs = {
-      repos: []
-    };
 
-    const gitDirectories = files.getDirectoriesIn(currentDirectory).filter(hasDotGit);
+  const gitDirectories = files.getDirectoriesIn(currentDirectory).filter(hasDotGit);
+  const configs = { repos: [] };
 
-    Promise.all(gitDirectories.map(buildConfigForRepoIn))
-      .then((results) => {
-        configs.repos = results.filter(config => !!config);
-
-        return files.writeJSON(configFilename, configs)
-          .then(resolve, reject);
-      })
-      .catch(() => reject);
-  });
+  return Promise.all(gitDirectories.map(buildConfigForRepoIn))
+    .then(results => {
+      configs.repos = results.filter(config => !!config);
+      return files.writeJSON(configFilename, configs);
+    });
 };
+
+export default configurationBuilder;

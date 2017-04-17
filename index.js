@@ -1,4 +1,4 @@
 #!/bin/sh
-":" //# comment ; exec /usr/bin/env node --harmony "$0" "$@"
+":" //# comment ; exec /usr/bin/env node "$0" "$@"
 
-require('./monday');
+require('./dist/monday');
