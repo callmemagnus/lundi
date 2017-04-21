@@ -11,11 +11,11 @@
     "node": ">=6"
   },
   "scripts": {
-    "prepublish": "npm-run-all lint build",
+    "prepublish": "npm-run-all lint test coverage build",
     "build": "rimraf dist && babel src -d dist/",
     "watch": "watch 'npm run test' tests src",
     "lint": "eslint \"src/**/*js\"",
-    "coverage": "nyc coverage --branch 80 --func 80 --lines 80",
+    "coverage": "nyc check-coverage --branch 80 --func 80 --lines 80",
     "test": "nyc babel-tape-runner tests/*.js"
   },
   "bin": {
@@ -37,6 +37,7 @@
     "babel-tape-runner": "2.0.1",
     "eslint": "3.19.0",
     "mock-fs": "4.2.0",
+    "np": "2.13.2",
     "npm-run-all": "4.0.2",
     "nyc": "10.2.0",
     "rimraf": "2.6.1",
