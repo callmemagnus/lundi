@@ -1,5 +1,5 @@
 {
-  "name": "monday",
+  "name": "lundi",
   "author": "",
   "version": "0.0.1",
   "description": "Script to run on monday morning",
@@ -13,9 +13,10 @@
   "scripts": {
     "prepublish": "npm-run-all lint build",
     "build": "rimraf dist && babel src -d dist/",
+    "watch": "watch 'npm run test' tests src",
     "lint": "eslint \"src/**/*js\"",
-    "watch": "watch 'npm run build' src",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "coverage": "nyc coverage --branch 80 --func 80 --lines 80",
+    "test": "nyc babel-tape-runner tests/*.js"
   },
   "bin": {
     "monday": "index.js"
@@ -33,9 +34,13 @@
   "devDependencies": {
     "babel-cli": "6.24.1",
     "babel-preset-latest": "6.24.1",
+    "babel-tape-runner": "2.0.1",
     "eslint": "3.19.0",
+    "mock-fs": "4.2.0",
     "npm-run-all": "4.0.2",
+    "nyc": "10.2.0",
     "rimraf": "2.6.1",
+    "tape": "4.6.3",
     "watch": "1.0.2"
   },
   "babel": {

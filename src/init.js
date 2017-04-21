@@ -69,42 +69,6 @@ const buildConfigForRepoIn = directory => {
       debug('error %s', error);
       return null;
     });
-
-  // return new Promise((resolve, reject) => {
-  //   const config = {};
-  //   simpleGit(directory)
-  //     .getRemotes(/* verbose */true  , (error, data) => {
-  //       debug(`git repos in ${directory}`);
-  //
-  //       if (error) {
-  //         reject(error);
-  //       }
-  //
-  //       // data is an array e.g.:
-  //       /*
-  //       [
-  //         {
-  //           name: 'mine',
-  //           refs: {
-  //             fetch: 'ssh://git@stash.nespresso.com:7999/~nnandersma/ecom-api-clients.git',
-  //             push: 'ssh://git@stash.nespresso.com:7999/~nnandersma/ecom-api-clients.git'
-  //           }
-  //         }, {
-  //           name: 'origin',
-  //           refs: {
-  //             fetch: 'ssh://git@stash.nespresso.com:7999/ecapi/ecom-api-clients.git',
-  //             push: 'ssh://git@stash.nespresso.com:7999/ecapi/ecom-api-clients.git'
-  //           }
-  //         }
-  //       ]
-  //       */
-  //
-  //       config.repos = data;
-  //
-  //       debug(data);
-  //     });
-  // });
-
 };
 
 const configurationBuilder = currentDirectory => {

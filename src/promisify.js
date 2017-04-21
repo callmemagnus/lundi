@@ -1,17 +1,16 @@
-
 /**
  * 
  * @param {Function} fun 
- * @param {} cont 
+ * @param {Object} cont 
  */
-const promisify = (fun, cont) => {
+const promisify = (fun, functionContext) => {
   if (typeof fun !== 'function') {
     throw 'promisify requires a function as paramater';
   }
 
   return (...params) => {
     return new Promise(function(resolve, reject) {
-      var context = cont ? cont : null;
+      const context = functionContext ? functionContext : null;
 
       fun.apply(context, [...params, (error, data) => {
         if (error) {
