@@ -12,7 +12,7 @@ import presentation from './presentation';
 const pkg = require('../package.json');
 const debug = Debug('main');
 
-process.on('unhandledRejection', function(reason, p){
+process.on('unhandledRejection', (reason, p) => {
   presentation.error(`Possibly Unhandled Rejection at: Promise ${p} reason ${reason}`);
 });
 
