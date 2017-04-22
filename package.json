@@ -11,6 +11,7 @@
     "node": ">=6"
   },
   "scripts": {
+    "release": "np",
     "prepublish": "npm-run-all lint test coverage build",
     "build": "rimraf dist && babel src -d dist/",
     "watch": "watch 'npm run test' tests src",
