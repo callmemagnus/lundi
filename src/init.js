@@ -1,93 +1,76 @@
-const files = require('./files');
-const presentation = require('./presentation');
-const debug = require('debug')('init');
-const path = require('path');
-const git = require('./git');
+import { log, error } from "./log";
+import Debug from "debug";
+import path from "path";
+import {
+  directoryExists,
+  fileExists,
+  writeJSON,
+  getDirectoriesIn
+} from "./files";
+import { getRemotes, status } from "./git";
+import { inspect } from "util";
+
+const debug = Debug("init");
 
 // all the code related to the generation of the config files
-const configFilename = require('../package').config.filename;
+const configFilename = require("../package").config.filename;
 
 /**
  * Determin if directory has a .git repository
  * @param {String} directory
  */
-const hasDotGit = directory => files.directoryExists(path.join(directory, '.git'));
+const hasDotGit = directory => directoryExists(path.join(directory, ".git"));
 
 const findCommandForproject = directory => {
-  if (files.fileExists(path.join(directory, 'package.json'))) {
-    // return {
-    //   command: 'npm',
-    //   args: [
-    //     'install',
-    //     '--cache-min 999999' // let's leverage the cache
-    //   ]
-    // };
-    return 'npm install --cache-min 99999';
-  }
-  else if (files.fileExists(path.join(directory, 'pom.xml'))) {
-    // return {
-    //   command: 'mvn',
-    //   args: [
-    //     'compile'
-    //   ]
-    // };
-    return 'mvn compile';
+  if (fileExists(path.join(directory, "package.json"))) {
+    return "npm install --cache-min 99999";
+  } else if (fileExists(path.join(directory, "pom.xml"))) {
+    return "mvn compile";
   }
 
-  return '';
+  return "";
 };
 
-const buildConfigForRepoIn = directory => {
-  debug('buildConfigForRepoIn %s', directory);
-  return git.getRemotes(directory)
-    .then(data => {
-      debug('configuration for %s (%d remotes)', directory, data.length);
+const buildConfigForRepoIn = async directory => {
+  debug("buildConfigForRepoIn %s", directory);
+  try {
+    const remotes = (await getRemotes(directory)).filter(
+      item => !!item.name.length
+    );
 
-      const dataEmptyRemoved = data.filter(item => !!item.name.length);
+    if (!remotes.length) {
+      throw new Error("no remotes");
+    }
 
-      if (!dataEmptyRemoved.length) {
-        return Promise.reject('No remotes');
-      }
+    const commands = [findCommandForproject(directory)];
 
-      const config = {
-        dirname: directory,
-        gitRemotes: data,
-        branch: 'master'
-      };
-
-      config.commands = [];
-
-      const command = findCommandForproject(directory);
-
-      if (command && command.length) {
-        config.commands.push(command);
-      }
-
-      return config;
-    },
-    error => {
-      debug('error %s', error);
-      return null;
-    });
+    return {
+      directory,
+      remotes,
+      commands
+    };
+  } catch (e) {
+    throw e;
+  }
 };
 
 const configurationBuilder = currentDirectory => {
-  presentation.log(`Trying to build config for ${currentDirectory}`);
+  log(`Trying to build config for ${currentDirectory}`);
 
-  if (files.fileExists(configFilename)) {
-    presentation.error(`Configuration file "${configFilename}" exists. Delete it to recreate.`);
+  if (fileExists(configFilename)) {
+    error(
+      `Configuration file "${configFilename}" exists. Delete it to recreate.`
+    );
     process.exit(1);
   }
 
-
-  const gitDirectories = files.getDirectoriesIn(currentDirectory).filter(hasDotGit);
+  const gitDirectories = getDirectoriesIn(currentDirectory).filter(hasDotGit);
   const configs = { repos: [] };
 
-  return Promise.all(gitDirectories.map(buildConfigForRepoIn))
-    .then(results => {
-      configs.repos = results.filter(config => !!config);
-      return files.writeJSON(configFilename, configs);
-    });
+  return Promise.all(gitDirectories.map(buildConfigForRepoIn)).then(results => {
+    configs.repos = results.filter(config => !!config);
+    return writeJSON(configFilename, configs);
+  });
 };
 
 export default configurationBuilder;
