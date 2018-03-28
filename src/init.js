@@ -28,21 +28,17 @@ const findCommandForproject = directory => {
     return "mvn compile";
   }
 
-  return "";
+  return null;
 };
 
 const buildConfigForRepoIn = async directory => {
   debug("buildConfigForRepoIn %s", directory);
   try {
-    const remotes = (await getRemotes(directory)).filter(
-      item => !!item.name.length
-    );
+    const remotes = await getRemotes(directory);
 
-    if (!remotes.length) {
-      throw new Error("no remotes");
-    }
+    const command = findCommandForproject(directory);
 
-    const commands = [findCommandForproject(directory)];
+    const commands = command ? [command] : [];
 
     return {
       directory,

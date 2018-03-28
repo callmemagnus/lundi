@@ -82,7 +82,7 @@ export const restoreRepo = async repoConfiguration => {
       });
     });
   } catch (e) {
-    error(e);
+    error(`${directory}: there was an error "${e.message ? e.message : e}"`);
   }
 };
 

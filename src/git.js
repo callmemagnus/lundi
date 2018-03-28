@@ -1,7 +1,16 @@
 import Debug from "debug";
 import git from "simple-git/promise";
+import pluralise from "pluralise";
 
 const debug = Debug("git");
+
+const thereIs = (count, singular, plural) => {
+  return pluralise.withCount(
+    count,
+    `There is % ${singular}`,
+    `There are % ${plural}`
+  );
+};
 
 export const hasNoPendingOperations = directory => {
   debug("hasNoPendingOperations in %s", directory);
@@ -25,7 +34,12 @@ export const hasNoPendingOperations = directory => {
           new Error(
             issues
               .map(
-                issue => `${data[issue].length} ${issue} files in ${directory}`
+                issue =>
+                  thereIs(
+                    data[issue].length,
+                    `${issue} file`,
+                    `${issue} files`
+                  ) + ` in ${directory}`
               )
               .join("\n")
           )
@@ -38,7 +52,13 @@ export const hasNoPendingOperations = directory => {
     // other branches
     currentGit.log(["--branches", "--not", "--remotes"]).then(data => {
       if (data && data.all && data.all.length) {
-        return Promise.reject(`There are ${data.all.length} unpushed commits.`);
+        throw new Error(
+          `${directory}: ${thereIs(
+            data.all.length,
+            "unpushed commit",
+            "unpushed commits"
+          )}`
+        );
       }
       return Promise.resolve();
     }),
@@ -46,7 +66,9 @@ export const hasNoPendingOperations = directory => {
     // remaining stashes
     currentGit.stashList().then(data => {
       if (data && data.all && data.all.length) {
-        return Promise.reject(`There are ${data.all.length} stashes.`);
+        throw new Error(
+          `${directory}: ${thereIs(data.all.length, "stash", "stashes")}.`
+        );
       }
     })
   ]);
@@ -56,12 +78,7 @@ export const init = directory => git(directory).init();
 
 export const status = directory => git(directory).status();
 
-export const fetchAll = directory =>
-  git(directory)
-    .fetch(["--all", "-p"])
-    .then(result => {
-      debug("fetch", result);
-    });
+export const fetchAll = directory => git(directory).fetch(["--all", "-p"]);
 
 export const checkout = (directory, branch, origin) => {
   debug("Checking out %s in %s", branch, directory);
