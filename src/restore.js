@@ -1,14 +1,9 @@
 import Debug from "debug";
 import async from "async";
+import { removeDir, createDir, currentDirectory } from "./files";
+import { error, progress } from "./log";
 import {
-  directoryExists,
-  removeDir,
-  createDir,
-  currentDirectory
-} from "./files";
-import { log, error } from "./log";
-import {
-  hasNoPendingOperations,
+  getPendingOperations,
   addRemote,
   init,
   fetchAll,
@@ -35,51 +30,59 @@ const execFunction = (command, pathToDir) => callback => {
   );
 };
 
-export const runCommand = () => {};
-
 export const restoreRepo = async repoConfiguration => {
   const { directory, remotes, commands } = repoConfiguration;
-  log(`Restoring ${directory}`);
+  progress(0, directory, "starting to restore");
 
-  if (!directoryExists(directory)) {
-    log(`Directory in configfile ${directory} does not exist.`);
-    throw new Error("Directory does not exist");
+  const pending = await getPendingOperations(directory);
+
+  if (pending) {
+    debug(`${directory}: ${pending}`);
+    progress(0, directory, pending);
+    return Promise.resolve(false);
   }
 
   try {
-    await hasNoPendingOperations(directory);
     const { current, tracking } = await status(directory);
     debug(`Will restore ${current} from ${tracking}`);
+    progress(1, directory, `Will restore ${current} from ${tracking}`);
 
     await removeDir(directory);
     debug(`${directory}: removed`);
+    progress(2, directory, "Removed");
 
     await createDir(directory);
     debug(`${directory}: created`);
+    progress(3, directory, "Created");
 
     await init(directory);
     debug(`${directory}: init`);
+    progress(4, directory, "Initialized");
 
     remotes.forEach(async ({ name, refs: { fetch } }) => {
       debug(`${directory}: Adding ${name} from ${fetch}`);
       await addRemote(directory, name, fetch);
+      progress(5, directory, `Added ${name} remote`);
     });
 
     await fetchAll(directory);
     debug(`${directory}: fetched`);
+    progress(6, directory, "Fetched");
 
     if (tracking && current) {
       await checkout(directory, current, tracking);
       debug(`${directory}: ${current} checked out`);
+      progress(7, directory, `Checked out ${current}`);
     } else {
       await checkout(directory, "master", "origin/master");
     }
 
-    log(`${directory}: is restored.`);
-
+    debug(`${directory}: is restored.`);
+    progress(8, directory, "Restored.");
     async.series(
       commands.filter(x => !!x).map(command => {
-        log(`${directory}: executing "${command}"`);
+        debug(`${directory}: executing "${command}"`);
+        progress(10, directory, `Running "${command}"`);
         return execFunction(command, directory);
       }),
       error => {
@@ -87,12 +90,19 @@ export const restoreRepo = async repoConfiguration => {
           debug(`${directory}: error executing commands: "${error}"`);
           throw new Error(error);
         }
+        progress(11, directory, "Commands executed.");
       }
     );
+    return true;
   } catch (e) {
     error(`${directory}: there was an error "${e.message ? e.message : e}"`);
   }
 };
 
 export const restoreAllRepos = reposConfiguration =>
-  Promise.all(reposConfiguration.map(restoreRepo));
+  reposConfiguration.forEach(async configuration => {
+    const result = await restoreRepo(configuration);
+    if (result && !configuration.commands.length) {
+      progress(12, configuration.directory, "Done.");
+    }
+  });

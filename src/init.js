@@ -7,8 +7,7 @@ import {
   writeJSON,
   getDirectoriesIn
 } from "./files";
-import { getRemotes, status } from "./git";
-import { inspect } from "util";
+import { getRemotes } from "./git";
 
 const debug = Debug("init");
 
@@ -23,7 +22,7 @@ const hasDotGit = directory => directoryExists(path.join(directory, ".git"));
 
 const findCommandForproject = directory => {
   if (fileExists(path.join(directory, "package.json"))) {
-    return "npm install --cache-min 99999";
+    return "npm install";
   } else if (fileExists(path.join(directory, "pom.xml"))) {
     return "mvn compile";
   }
@@ -35,9 +34,7 @@ const buildConfigForRepoIn = async directory => {
   debug("buildConfigForRepoIn %s", directory);
   try {
     const remotes = await getRemotes(directory);
-
     const command = findCommandForproject(directory);
-
     const commands = command ? [command] : [];
 
     return {

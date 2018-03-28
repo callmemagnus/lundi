@@ -4,74 +4,67 @@ import pluralise from "pluralise";
 
 const debug = Debug("git");
 
-const thereIs = (count, singular, plural) => {
-  return pluralise.withCount(
-    count,
-    `There is % ${singular}`,
-    `There are % ${plural}`
-  );
-};
+// const thereIs = (count, singular, plural) => {
+//   return pluralise.withCount(
+//     count,
+//     `There is % ${singular}`,
+//     `There are % ${plural}`
+//   );
+// };
 
-export const hasNoPendingOperations = directory => {
+export const getPendingOperations = async directory => {
   debug("hasNoPendingOperations in %s", directory);
+
+  let response = [];
 
   const currentGit = git(directory);
 
-  return Promise.all([
-    // current workspace
-    currentGit.status().then(data => {
-      const issues = [
-        "not_added",
-        "modified",
-        "conflicted",
-        "created",
-        "deleted",
-        "renamed"
-      ].filter(key => data[key] && data[key].length);
+  const issues = await currentGit.status();
 
-      if (issues.length) {
-        return Promise.reject(
-          new Error(
-            issues
-              .map(
-                issue =>
-                  `${directory}: ${thereIs(
-                    data[issue].length,
-                    issue + " file",
-                    issue + " files"
-                  )}`
-              )
-              .join("\n")
-          )
-        );
-      }
+  const typeOfIssues = [
+    "not_added",
+    "modified",
+    "conflicted",
+    "created",
+    "deleted",
+    "renamed"
+  ].filter(type => issues[type] && issues[type].length);
 
-      return Promise.resolve();
-    }),
+  debug(directory, "issues %", typeOfIssues);
 
-    // other branches
-    currentGit.log(["--branches", "--not", "--remotes"]).then(data => {
-      if (data && data.all && data.all.length) {
-        throw new Error(
-          `${directory}: ${thereIs(
-            data.all.length,
-            "unpushed commit",
-            "unpushed commits"
-          )}`
-        );
-      }
-      return Promise.resolve();
-    }),
+  response = response.concat(
+    typeOfIssues.map(type => `${issues[type].length} ${type}`)
+  );
 
-    // remaining stashes
-    currentGit.stashList().then(data => {
-      if (data && data.all && data.all.length) {
-        throw new Error(
-          `${directory}: ${thereIs(data.all.length, "stash", "stashes")}.`
-        );
-      }
-    })
+  const unPushedCommits = await currentGit.log([
+    "--branches",
+    "--not",
+    "--remotes"
   ]);
+
+  debug(directory, "unpushed %", unPushedCommits);
+
+  if (unPushedCommits && unPushedCommits.all && unPushedCommits.all.length) {
+    response.push(
+      pluralise(
+        unPushedCommits.all.length,
+        "an unpushed commit",
+        "% unpushed commits"
+      )
+    );
+  }
+
+  const stashes = await currentGit.stashList();
+
+  debug(directory, "stashed %", stashes);
+
+  if (stashes && stashes.all && stashes.all.length) {
+    response.push(pluralise(stashes.all.length, "stash", "stashes"));
+  }
+
+  debug(directory, "getPendingOperations response", response);
+
+  return response.join(" | ");
 };
 
 export const init = directory => git(directory).init();
@@ -82,14 +75,12 @@ export const fetchAll = directory => git(directory).fetch(["--all", "-p"]);
 
 export const checkout = (directory, branch, origin) => {
   debug("Checking out %s in %s", branch, directory);
-  const currentGit = git(directory);
-  return currentGit.checkoutBranch(branch, origin);
+  return git(directory).checkoutBranch(branch, origin);
 };
 
 export const addRemote = (directory, name, url) => {
   debug("Adding remote %s (%s) in %s", name, url, directory);
-  const currentGit = git(directory);
-  return currentGit.addRemote(name, url);
+  return git(directory).addRemote(name, url);
 };
 
 export const getRemotes = directory => git(directory).getRemotes(true);

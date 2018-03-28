@@ -16,12 +16,13 @@
   },
   "scripts": {
     "release": "np",
-    "prepublish": "npm-run-all lint:prettier test coverage build",
+    "prepublish": "npm-run-all lint:* test coverage build",
     "build": "rimraf dist && babel src -d dist",
     "watchDev": "watch 'npm run test' tests src",
     "watch": "watch src",
-    "lint:prettier": "prettier -l **/*.js",
-    "fix:prettier": "prettier --write **/*.js",
+    "lint:js": "eslint --config .eslintrc.js src/**/*.js",
+    "lint:prettier": "prettier -l **/*.js **/*.md",
+    "fix:prettier": "prettier --write **/*.js **/*.md",
     "coverage": "nyc check-coverage --branch 80 --func 80 --lines 80",
     "test": "nyc babel-tape-runner tests/*.js"
   },
@@ -36,6 +37,8 @@
     "debug": "3.1.0",
     "figlet": "1.2.0",
     "fs-extra": "5.0.0",
+    "log-update": "2.3.0",
+    "pad": "2.0.3",
     "pluralise": "1.0.0",
     "prettier": "1.10.2",
     "simple-git": "1.92.0"

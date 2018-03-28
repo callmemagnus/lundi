@@ -1,35 +1,17 @@
 import program from "commander";
-import path from "path";
-import { exec } from "child_process";
-import Debug from "debug";
 
 import init from "./init";
-import {
-  currentDirectory,
-  directoryExists,
-  fileExists,
-  removeDir,
-  createDir,
-  readJSON,
-  readJSONSync
-} from "./files";
-import { hasNoPendingOperations, addRemote, fetchAll, checkout } from "./git";
+import { directoryExists, readJSONSync } from "./files";
 import { restoreAllRepos } from "./restore";
 import { log, error, title } from "./log";
 
 const pkg = require("../package.json");
-const debug = Debug("main");
 
 process.on("unhandledRejection", (reason, p) => {
   error(`Possibly Unhandled Rejection at: Promise ${p} reason ${reason}`);
 });
 
 const configFilename = pkg.config.filename;
-
-const propagateFailure = error => {
-  debug(error.message ? error.message : error);
-  return Promise.reject(error);
-};
 
 if (directoryExists(".git")) {
   error("Inside a git directory, exiting");
