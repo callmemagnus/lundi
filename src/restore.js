@@ -1,4 +1,5 @@
 import Debug from "debug";
+import async from "async";
 import {
   directoryExists,
   removeDir,
@@ -58,6 +59,7 @@ export const restoreRepo = async repoConfiguration => {
 
     await init(directory);
     debug(`${directory}: init`);
+
     remotes.forEach(async ({ name, refs: { fetch } }) => {
       debug(`${directory}: Adding ${name} from ${fetch}`);
       await addRemote(directory, name, fetch);
@@ -73,14 +75,20 @@ export const restoreRepo = async repoConfiguration => {
       await checkout(directory, "master", "origin/master");
     }
 
-    commands.forEach(async command => {
-      debug(`${directory}: executing ${command}`);
-      execFunction(command, directory)(error => {
+    log(`${directory}: is restored.`);
+
+    async.series(
+      commands.filter(x => !!x).map(command => {
+        log(`${directory}: executing "${command}"`);
+        return execFunction(command, directory);
+      }),
+      error => {
         if (error) {
-          debug(`${directory}: Error in command "${command}": ${error}`);
+          debug(`${directory}: error executing commands: "${error}"`);
+          throw new Error(error);
         }
-      });
-    });
+      }
+    );
   } catch (e) {
     error(`${directory}: there was an error "${e.message ? e.message : e}"`);
   }

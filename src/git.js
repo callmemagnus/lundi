@@ -35,11 +35,11 @@ export const hasNoPendingOperations = directory => {
             issues
               .map(
                 issue =>
-                  thereIs(
+                  `${directory}: ${thereIs(
                     data[issue].length,
-                    `${issue} file`,
-                    `${issue} files`
-                  ) + ` in ${directory}`
+                    issue + " file",
+                    issue + " files"
+                  )}`
               )
               .join("\n")
           )

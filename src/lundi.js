@@ -1,5 +1,4 @@
 import program from "commander";
-import async from "async";
 import path from "path";
 import { exec } from "child_process";
 import Debug from "debug";
